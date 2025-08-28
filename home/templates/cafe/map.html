@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>대구 카페 지도 - Django</title>
+    <style>
+        #map {
+            width: 100%;
+            height: 800px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>대구 수성구 카페</h1>
+<div id="map"></div>
+
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=36b2fdb2239760e19810f7ef8e19aa9a&libraries=services" onload="initMap()"></script>
+
+<script>
+    function initMap() {
+        // 카카오맵 API가 로딩 완료된 후 이 함수가 실행됩니다.
+        // 'kakao' 객체를 안전하게 사용할 수 있습니다.
+
+        var mapContainer = document.getElementById('map'),
+            mapOption = {
+                center: new kakao.maps.LatLng(35.8459, 128.6277),
+                level: 7
+            };
+
+        var map = new kakao.maps.Map(mapContainer, mapOption);
+
+        fetch('/api/cafes/')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(cafe => {
+                    if (cafe.위도 && cafe.경도) {
+                        var markerPosition = new kakao.maps.LatLng(cafe.위도, cafe.경도);
+                        
+                        var marker = new kakao.maps.Marker({
+                            position: markerPosition
+                        });
+                        
+                        marker.setMap(map);
+
+                        var infoWindow = new kakao.maps.InfoWindow({
+                            content: `<div style="padding:5px;font-size:12px;">${cafe.업소명}</div>`
+                        });
+
+                        kakao.maps.event.addListener(marker, 'mouseover', function() {
+                            infoWindow.open(map, marker);
+                        });
+
+                        kakao.maps.event.addListener(marker, 'mouseout', function() {
+                            infoWindow.close();
+                        });
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }
+</script>
+</body>
+</html>
