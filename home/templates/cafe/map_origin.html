@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>대구 카페 지도 - Django</title>
+    <style>
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+        #cafe-list {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .cafe-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .cafe-item strong {
+            font-size: 1.1em;
+            color: #333;
+        }
+        .cafe-item p {
+            margin: 5px 0 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<h1>대구 수성구 카페</h1>
+<div id="map"></div>
+
+<div id="cafe-list">
+    <h2>카페 데이터</h2>
+    <ul id="cafe-data-ul">
+        <li>데이터 로딩 중...</li>
+    </ul>
+</div>
+
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=36b2fdb2239760e19810f7ef8e19aa9a"></script>
+
+<script>
+    var mapContainer = document.getElementById('map'),
+        mapOption = {
+            center: new kakao.maps.LatLng(35.8459, 128.6277),
+            level: 7
+        };
+
+    var map = new kakao.maps.Map(mapContainer, mapOption);
+
+    var cafeDataUl = document.getElementById('cafe-data-ul');
+    cafeDataUl.innerHTML = '';
+
+    fetch('/api/cafes/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0) {
+                cafeDataUl.innerHTML = '<li>데이터가 없습니다. (API 호출 실패 또는 결과 없음)</li>';
+                return;
+            }
+
+            data.forEach(cafe => {
+                var listItem = document.createElement('li');
+                listItem.className = 'cafe-item';
+                listItem.innerHTML = `
+                    <strong>${cafe.업소명 || '이름 없음'}</strong>
+                    <p>도로명 주소: ${cafe['소재지(도로명)'] || '주소 없음'}</p>
+                    <p>위도: ${cafe.위도 || '없음'}, 경도: ${cafe.경도 || '없음'}</p>
+                `;
+                cafeDataUl.appendChild(listItem);
+
+                if (cafe.위도 && cafe.경도) {
+                    var markerPosition = new kakao.maps.LatLng(cafe.위도, cafe.경도);
+                    var marker = new kakao.maps.Marker({
+                        position: markerPosition
+                    });
+                    marker.setMap(map);
+
+                    var infoWindow = new kakao.maps.InfoWindow({
+                        content: `<div style="padding:5px;font-size:12px;">${cafe.업소명}</div>`
+                    });
+
+                    kakao.maps.event.addListener(marker, 'mouseover', function() {
+                        infoWindow.open(map, marker);
+                    });
+
+                    kakao.maps.event.addListener(marker, 'mouseout', function() {
+                        infoWindow.close();
+                    });
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+            cafeDataUl.innerHTML = `<li>데이터를 불러오는 중 오류 발생: ${error.message}</li>`;
+        });
+</script>
+</body>
+</html>
