@@ -172,14 +172,22 @@
             }
 
             data.forEach(cafe => {
+                var linkItem = document.createElement('a');
+                
+                // **수정된 부분: 이름과 도로명 주소를 결합하여 링크 생성**
+                var combinedQuery = `${cafe.업소명} ${cafe['소재지(도로명)']}`;
+                linkItem.href = `https://map.naver.com/p/search/${encodeURIComponent(combinedQuery)}`;
+                linkItem.target = "_blank";
+
                 var listItem = document.createElement('li');
                 listItem.className = 'cafe-item';
                 listItem.innerHTML = `
                     <strong>${cafe.업소명 || '이름 없음'}</strong>
                     <p>도로명 주소: ${cafe['소재지(도로명)'] || '주소 없음'}</p>
-                    <p>위도: ${cafe.위도 || '없음'}, 경도: ${cafe.경도 || '없음'}</p>
                 `;
-                cafeDataUl.appendChild(listItem);
+
+                linkItem.appendChild(listItem);
+                cafeDataUl.appendChild(linkItem);
 
                 if (cafe.위도 && cafe.경도) {
                     var markerPosition = new kakao.maps.LatLng(cafe.위도, cafe.경도);
